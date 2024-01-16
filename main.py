@@ -13,7 +13,7 @@ if __name__ == "__main__":
     symbols = ['$SPX.X', '$NDX.X', '$VIX.X']
     # symbols = ['^SPX', '^NDX', '^VIX']  # for mcp_yf
     configurations = [(252, True), (30, True), (252, False), (30, False)]
-    steps = 5
+    steps = 4
 
     for symbol in symbols:
         for length, centered in configurations:
