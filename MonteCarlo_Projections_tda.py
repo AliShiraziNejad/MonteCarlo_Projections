@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import qmc, norm, cauchy, median_abs_deviation
 from sklearn.mixture import GaussianMixture
 import matplotlib.pyplot as plt
-from Code.API_CREDENTIALS import TDA_API_CREDENTIALS
+from Code.Utility.API_CREDENTIALS import TDA_API_CREDENTIALS
 
 """
 These classes are used to numerically calculate the probability distribution function (PDF) of the
