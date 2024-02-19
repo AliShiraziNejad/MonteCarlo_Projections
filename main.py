@@ -5,7 +5,7 @@ import MonteCarlo_Projections_yfinance as mcp_yf
 def run_simulation_MC(symbol, length, steps, centered):
     mc_norm = mcp_tda.Normal_MC(symbol, 'daily', length=length, daysBack=0)
     # mc_norm = mcp_yf.Normal_MC(symbol, '1d', length=length, daysBack=0)  # for mcp_yf
-    mc_norm.simulate(trials=50000, steps=steps, sampling="Sobol", distribution="Normal", centered=centered)
+    mc_norm.simulate(trials=200000, steps=steps, sampling="Sobol", distribution="Normal", centered=centered)
     mc_norm.summary("mean_stddev")
     # mc_norm.plot()  # unnecessary
 
