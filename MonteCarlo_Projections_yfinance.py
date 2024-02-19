@@ -9,6 +9,8 @@ from scipy.stats import qmc, norm, cauchy, median_abs_deviation
 These classes are used to numerically calculate the probability distribution function (PDF) of the
 closing price for n days ahead for a selected asset.
 
+Closed_form_forecast: analytical solution for Normal_MC
+
 Normal_MC uses a Gaussian (normal) or Cauchy distribution to sample from in order to generate the next step.
 
 GMM_MC uses a :
@@ -21,6 +23,83 @@ Data is provided by yfinance python library.
 
 Last Updated: 08-24-2023 11:30PM CST
 """
+
+
+class Closed_form_forecast:
+    def __init__(self, asset, frequencyType, length, daysBack):
+        """
+        Constructor for the Normal_MC class.
+
+        Parameters:
+        asset (str): Ticker symbol of the asset ie "SPY".
+        length (int): Number of periods to consider for the Monte Carlo simulation.
+        daysback (int): Number of days back to consider for the Monte Carlo simulation.
+        """
+
+        self.asset = asset
+        self.statistics_method = None
+
+        self.LOC = None
+        self.SCALE = None
+
+        self.SCALE_UPPER_1 = None
+        self.SCALE_LOWER_1 = None
+        self.SCALE_UPPER_2 = None
+        self.SCALE_LOWER_2 = None
+
+        data = yf.download(asset, period="20y", interval=frequencyType, progress=False)
+        close_data = data['Close']
+
+        if daysBack == 0:
+            close_data = close_data.iloc[-1 - length:]
+        else:
+            close_data = close_data.iloc[-1 - length - daysBack: -daysBack]
+
+        logReturns = np.log(close_data) - np.log(close_data.shift(1))
+
+        self.dfLogReturns = pd.Series(logReturns).iloc[1:]
+        self.closePrice = close_data.iloc[-1]
+
+    def fit(self, steps, centered):
+        """
+        Forecast statistics based on log returns.
+
+        Parameters:
+        steps (int): Number of steps for forecasting.
+        centered (bool): Whether the simulation should use a mean of zero or the calculated mean from the log returns.
+        """
+        mean = 0 if centered else (steps * np.mean(self.dfLogReturns))
+        stddev = np.sqrt(steps) * np.std(self.dfLogReturns)
+
+        self.SCALE_UPPER_1 = ((mean + stddev) + 1) * self.closePrice
+        self.SCALE_LOWER_1 = ((mean - stddev) + 1) * self.closePrice
+        self.SCALE_UPPER_2 = ((mean + 2 * stddev) + 1) * self.closePrice
+        self.SCALE_LOWER_2 = ((mean - 2 * stddev) + 1) * self.closePrice
+
+        self.LOC = self.closePrice if centered else (((steps * np.mean(self.dfLogReturns)) + 1) * self.closePrice)
+        self.SCALE = stddev * self.closePrice
+
+    def summary(self):
+        """
+        Method that prints a summary of the closed form solution.
+        Shows the asset, close price, and the statistics
+        """
+        print("##################################################")
+        print(f"Analytical Gaussian Solution\n---------------")
+        print(f"Asset: {self.asset}")
+        print("-----")
+        print("Close price: ", self.closePrice)
+        print("-----")
+        print(f'Mean = {self.LOC:.2f}')
+        print(f'Standard Deviation = {self.SCALE:.2f}')
+        print("---------------")
+        print(f'+1 STD = {self.SCALE_UPPER_1:.2f}')
+        print(f'-1 STD = {self.SCALE_LOWER_1:.2f}')
+        print("-----")
+        print(f'+2 STD = {self.SCALE_UPPER_2:.2f}')
+        print(f'-2 STD = {self.SCALE_LOWER_2:.2f}')
+        print("##################################################")
+
 
 class Normal_MC:
     def __init__(self, asset, frequencyType, length, daysBack):
@@ -77,7 +156,6 @@ class Normal_MC:
 
         self.dfLogReturns = pd.Series(logReturns).iloc[1:]
         self.closePrice = close_data.iloc[-1]
-
 
     def simulate(self, trials, steps, sampling, distribution, centered):
         """
